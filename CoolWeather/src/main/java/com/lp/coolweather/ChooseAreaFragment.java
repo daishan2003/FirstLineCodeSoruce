@@ -5,4 +5,5 @@ package com.lp.coolweather;
  */
 
 public class ChooseAreaFragment {
+
 }
