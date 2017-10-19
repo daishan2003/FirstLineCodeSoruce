@@ -21,9 +21,6 @@ import com.lp.coolweather.db.Province;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
-import static android.webkit.WebSettings.PluginState.ON;
-
 /**
  * Created by LP on 2017/10/19/18:40.
  */
@@ -97,7 +94,7 @@ public class ChooseAreaFragment extends Fragment {
                     String weatherId = countyList.get(position).getWeatherId();
                     if (getActivity() instanceof MainActivity){
                         Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                        intent.putExtras("weather_id", weatherId);
+                        intent.putExtra("weather_id", weatherId);
                         startActivity(intent);
                         getActivity().finish();
                     } else if (getActivity() instanceof WeatherActivity){

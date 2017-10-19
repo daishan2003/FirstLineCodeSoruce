@@ -29,7 +29,7 @@ public class County extends DataSupport {
         this.countyName = countyName;
     }
 
-    public int getWeatherId() {
+    public String getWeatherId() {
         return weatherId;
     }
 
