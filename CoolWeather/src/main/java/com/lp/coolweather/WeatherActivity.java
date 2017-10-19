@@ -1,5 +1,6 @@
 package com.lp.coolweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -10,15 +11,29 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.lp.coolweather.gson.Forecast;
+import com.lp.coolweather.gson.Weather;
+import com.lp.coolweather.service.AutoUpdateService;
+import com.lp.coolweather.util.Constant;
+import com.lp.coolweather.util.HttpUtil;
 import com.lp.coolweather.util.Utility;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 /**
  * Created by LP on 2017/10/17/17:25.
@@ -47,6 +62,8 @@ public class WeatherActivity extends AppCompatActivity{
     public TextView tv_sportText;
     public ImageView iv_bingPicImg;
 
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +91,7 @@ public class WeatherActivity extends AppCompatActivity{
         tv_titleUpdateTime = (TextView) findViewById(R.id.title_update_time);
         tv_degreeText = (TextView) findViewById(R.id.degree_text);
         tv_weatherInfoText = (TextView) findViewById(R.id.weather_info_text);
+
         lv_forecastLayout = (LinearLayout) findViewById(R.id.forecast_layout);
         tv_aqiText = (TextView) findViewById(R.id.aqi_text);
         tv_pm25Text = (TextView) findViewById(R.id.pm25_text);
@@ -87,10 +105,9 @@ public class WeatherActivity extends AppCompatActivity{
         String weatherStr = sp.getString("weather", null);
         if (weatherStr != null){
             // 有缓存时直接解析天气数据
-            Weather weather = Utility.handleWeatherResponse();
+            Weather weather = Utility.handleWeatherResponse(weatherStr);
             weatherId = weather.basic.weatherId;
-            showWeatherInfo();
-
+            showWeatherInfo(weather);
         } else {
             // 无缓存时从服务器查询天气
             weatherId = getIntent().getStringExtra("weather_id");
@@ -121,14 +138,119 @@ public class WeatherActivity extends AppCompatActivity{
 
     }
 
-    private void requestWeather(final String weatherId) {
+    /*
+     * 根据天气id请求城市天气信息。
+     * @param weatherId
+     */
+    public void requestWeather(final String weatherId) {
+        Log.i(TAG, "requestWeather weatherId = " + weatherId);
+        String weatherUrl = Constant.WEATHER_URL1 + weatherId + Constant.WEATHER_URL2;
+        HttpUtil.sentOkHttpRequest(weatherUrl, new Callback(){
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String responseText = response.body().string();
+                final Weather weather = Utility.handleWeatherResponse(responseText);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (weather != null && "ok".equals(weather.status)){
+                            SharedPreferences.Editor editor =
+                                    PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                            editor.putString("weather", responseText);
+                            editor.apply();
+                            showWeatherInfo(weather);
+                        } else {
+                            Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        }
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        });
+        loadBingPic();
 
     }
 
+    /*
+     * 加载必应每日一图
+     */
     private void loadBingPic() {
+        String requestBingPicUrl = Constant.BING_PIC_URL;
+        HttpUtil.sentOkHttpRequest(requestBingPicUrl, new Callback() {
 
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                SharedPreferences.Editor editor =
+                        PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString("bing_pic", bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(iv_bingPicImg);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    private void showWeatherInfo() {
+    /**
+     * 处理并展示Weather实体类中的数据
+     * @param weather
+     */
+    private void showWeatherInfo(Weather weather) {
+        String cityName = weather.basic.cityName;
+        String updateTime = weather.basic.update.updateTime.split(" ")[1];
+        String degree = weather.now.temperature + " C";
+        String weatherInfo = weather.now.more.info;
+        tv_titleCity.setText(cityName);
+        tv_titleUpdateTime.setText(updateTime);
+        tv_degreeText.setText(degree);
+        tv_weatherInfoText.setText(weatherInfo);
+        lv_forecastLayout.removeAllViews();
+        for (Forecast forecast : weather.forecastList){
+            View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, lv_forecastLayout, false);
+            TextView dateText = (TextView) findViewById(R.id.date_text);
+            TextView infoText = (TextView) findViewById(R.id.info_text);
+            TextView maxText = (TextView) findViewById(R.id.max_text);
+            TextView minText = (TextView) findViewById(R.id.min_text);
+            dateText.setText(forecast.date);
+            infoText.setText(forecast.more.info);
+            maxText.setText(forecast.temperature.max);
+            minText.setText(forecast.temperature.min);
+            lv_forecastLayout.addView(view);
+        }
+        if (weather.aqi != null){
+            tv_aqiText.setText(weather.aqi.aqiCity.aqi);
+            tv_pm25Text.setText(weather.aqi.aqiCity.pm25);
+        }
+        String comfort = "舒适度:" + weather.suggestion.comfort.info;
+        String carWash = "洗车指数:" + weather.suggestion.carWash.info;
+        String sport = "运动建议:" + weather.suggestion.sport.info;
+        tv_comfortText.setText(comfort);
+        tv_carWashText.setText(carWash);
+        tv_sportText.setText(sport);
+        weatherLayout.setVisibility(View.VISIBLE);
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 }
