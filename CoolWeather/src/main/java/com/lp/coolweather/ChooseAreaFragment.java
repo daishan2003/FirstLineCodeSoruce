@@ -17,6 +17,9 @@ import android.widget.TextView;
 import com.lp.coolweather.db.City;
 import com.lp.coolweather.db.County;
 import com.lp.coolweather.db.Province;
+import com.lp.coolweather.util.Constant;
+
+import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +35,10 @@ public class ChooseAreaFragment extends Fragment {
     private static final int LEVEL_PROVINCE = 0;
     private static final int LEVEL_CITY = 1;
     private static final int LEVEL_COUNTY = 2;
+
+    private static final String TYPE_PROVINCE = "province";
+    private static final String TYPR_CITY = "city";
+    private static final String TYPE_COUNTY = "county";
 
     private ProgressDialog progressDialog;
     private TextView tv_titleText;
@@ -104,7 +111,8 @@ public class ChooseAreaFragment extends Fragment {
                         weatherActivity.requestWeather(weatherId);
                     }
                 }
-            }       });
+            }
+        });
         bn_backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -122,6 +130,20 @@ public class ChooseAreaFragment extends Fragment {
      * 查询全国所有的省，优先从数据库查询，如果没有查询到再去服务器上查询。
      */
     private void queryProvinces() {
+        tv_titleText.setText("中国");
+        bn_backButton.setVisibility(View.GONE);
+        provinceList = DataSupport.findAll(Province.class);
+        if (provinceList.size() > 0) {
+            dataList.clear();
+            for (Province p : provinceList) {
+                dataList.add(p.getProvinceName());
+            }
+            adapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel = LEVEL_PROVINCE;
+        } else {
+            queryFromServer(Constant.DATA_ADDRESS, TYPE_PROVINCE);
+        }
 
     }
 
@@ -129,13 +151,37 @@ public class ChooseAreaFragment extends Fragment {
      * 查询选中省内所有的市，优先从数据库查询，如果没有查询到再去服务器上查询。
      */
     private void queryCities() {
-
+        tv_titleText.setText(selectedProvince.getProvinceName());
+        bn_backButton.setVisibility(View.VISIBLE);
+        cityList = DataSupport.where("province = ?", String.valueOf(selectedProvince.getId())).find(City.class);
+        if (cityList.size() > 0) {
+            dataList.clear();
+            for (City c: cityList) {
+                dataList.add(c.getCityName());
+            }
+            adapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel = LEVEL_CITY;
+        } else {
+            String address = Constant.DATA_ADDRESS + "/" + selectedProvince.getProvinceCode();
+            queryFromServer(address, TYPR_CITY);
+        }
     }
 
     /**
      * 查询选中市内所有的县，优先从数据库查询，如果没有查询到再去服务器上查询。
      */
     private void queryCounties() {
+        tv_titleText.setText(selectedCity.getCityName());
+        bn_backButton.setVisibility(View.VISIBLE);
+        countyList = DataSupport.where("city = ?", String.valueOf(selectedCity.getId())).find(County.class);
+
+    }
+
+    /**
+     * 根据传入的地址和类型从服务器上查询省市县数据。
+     */
+    private void queryFromServer(String dataAddress, String type) {
 
     }
 }
