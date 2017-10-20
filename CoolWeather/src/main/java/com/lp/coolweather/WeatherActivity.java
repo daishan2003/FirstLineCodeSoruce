@@ -107,10 +107,12 @@ public class WeatherActivity extends AppCompatActivity{
             // 有缓存时直接解析天气数据
             Weather weather = Utility.handleWeatherResponse(weatherStr);
             weatherId = weather.basic.weatherId;
+            Log.i(TAG, "initView 11 weatherId = " + weatherId);
             showWeatherInfo(weather);
         } else {
             // 无缓存时从服务器查询天气
             weatherId = getIntent().getStringExtra("weather_id");
+            Log.i(TAG, "initView 22 weatherId = " + weatherId);
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
