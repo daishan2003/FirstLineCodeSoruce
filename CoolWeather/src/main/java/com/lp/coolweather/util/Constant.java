@@ -11,4 +11,6 @@ public class Constant {
     public static final String WEATHER_URL2 = "&key=bc0418b57b2d4918819d3974ac1285d9";
 
     public static final String BING_PIC_URL = "http://guolin.tech/api/bing_pic";
+
+    public static final String DATA_ADDRESS = "http://guolin.tech/api/china";
 }
