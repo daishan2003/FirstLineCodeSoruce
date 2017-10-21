@@ -18,11 +18,18 @@ import com.lp.coolweather.db.City;
 import com.lp.coolweather.db.County;
 import com.lp.coolweather.db.Province;
 import com.lp.coolweather.util.Constant;
+import com.lp.coolweather.util.HttpUtil;
+import com.lp.coolweather.util.Utility;
 
 import org.litepal.crud.DataSupport;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 /**
  * Created by LP on 2017/10/19/18:40.
@@ -175,13 +182,80 @@ public class ChooseAreaFragment extends Fragment {
         tv_titleText.setText(selectedCity.getCityName());
         bn_backButton.setVisibility(View.VISIBLE);
         countyList = DataSupport.where("city = ?", String.valueOf(selectedCity.getId())).find(County.class);
-
+        if (countyList.size() > 0) {
+            dataList.clear();
+            for (County county : countyList){
+                dataList.add(county.getCountyName());
+            }
+            adapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel = LEVEL_COUNTY;
+        } else {
+            String address = Constant.DATA_ADDRESS + "/" + selectedProvince.getProvinceCode()
+                    + "/" + selectedCity.getCityCode();
+            queryFromServer(address, TYPE_COUNTY);
+        }
     }
 
     /**
      * 根据传入的地址和类型从服务器上查询省市县数据。
      */
-    private void queryFromServer(String dataAddress, String type) {
+    private void queryFromServer(String dataAddress, final String type) {
+        showProgressDialog();
+        HttpUtil.sentOkHttpRequest(dataAddress, new Callback() {
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseText = response.body().string();
+                boolean result = false;
+                if (TYPE_PROVINCE.equals(type)) {
+                    result = Utility.handleProvinceResponse(responseText);
+                } else if (TYPR_CITY.equals(type)) {
+                    result = Utility.handleCityResponse(responseText, selectedProvince.getId());
+                } else if (TYPE_COUNTY.equals(type)) {
+                    result = Utility.handleCountyResponse(responseText, selectedCity.getId());
+                }
+                if (result) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            closeProgressDialog();
+                            if (TYPE_PROVINCE.equals(type)) {
+                                queryProvinces();
+                            } else if (TYPR_CITY.equals(type)) {
+                                queryCities();
+                            } else if (TYPE_COUNTY.equals(type)) {
+                                queryCounties();
+                            }
+                        }
+                    });
+                }
+            }
 
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+        });
+    }
+
+    /**
+     * 显示进度对话框
+     */
+    private void showProgressDialog() {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(getActivity());
+            progressDialog.setMessage("正在加载...");
+            progressDialog.setCanceledOnTouchOutside(false);
+        }
+        progressDialog.show();
+    }
+
+    /**
+     * 关闭对话框
+     */
+    private void closeProgressDialog() {
+         if (progressDialog != null) {
+             progressDialog.dismiss();
+         }
     }
 }
