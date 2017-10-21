@@ -10,9 +10,9 @@
     <!--数据库的映射模型（数据库表-->
     <list>
         <!--数据库的映射模型的地址（数据库表结构-->
-        <mapping class="com.coolweather.android.db.Province" />
-        <mapping class="com.coolweather.android.db.City" />
-        <mapping class="com.coolweather.android.db.County" />
+        <mapping class="com.lp.coolweather.db.Province" />
+        <mapping class="com.lp.coolweather.db.City" />
+        <mapping class="com.lp.coolweather.db.County" />
     </list>
 
 </litepal>
