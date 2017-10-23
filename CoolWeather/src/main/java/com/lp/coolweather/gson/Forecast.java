@@ -8,6 +8,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class Forecast {
 
+    @SerializedName("date")
     public String date;
 
     @SerializedName("tmp")
@@ -25,7 +26,7 @@ public class Forecast {
 
     public class More {
 
-        @SerializedName("txt_id")
+        @SerializedName("txt_d")
         public String info;
     }
 

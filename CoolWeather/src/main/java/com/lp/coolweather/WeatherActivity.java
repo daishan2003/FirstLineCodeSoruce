@@ -222,26 +222,36 @@ public class WeatherActivity extends AppCompatActivity{
     private void showWeatherInfo(Weather weather) {
         String cityName = weather.basic.cityName;
         String updateTime = weather.basic.update.updateTime.split(" ")[1];
-        String degree = weather.now.temperature + " C";
+        String degree = weather.now.temperature + "℃";
         String weatherInfo = weather.now.more.info;
         tv_titleCity.setText(cityName);
         tv_titleUpdateTime.setText(updateTime);
         tv_degreeText.setText(degree);
         tv_weatherInfoText.setText(weatherInfo);
         lv_forecastLayout.removeAllViews();
+        Log.i(TAG, "showWeatherInfo forecastList.size() = " + weather.forecastList.size());
         for (Forecast forecast : weather.forecastList){
             View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, lv_forecastLayout, false);
-            TextView dateText = (TextView) findViewById(R.id.date_text);
-            TextView infoText = (TextView) findViewById(R.id.info_text);
-            TextView maxText = (TextView) findViewById(R.id.max_text);
-            TextView minText = (TextView) findViewById(R.id.min_text);
+            TextView dateText = (TextView) view.findViewById(R.id.date_text);
+            TextView infoText = (TextView) view.findViewById(R.id.info_text);
+            TextView maxText = (TextView) view.findViewById(R.id.max_text);
+            TextView minText = (TextView) view.findViewById(R.id.min_text);
+            //Log.i(TAG, "showWeatherInfo forecast = " + forecast);
+            String date = forecast.date;
+            String info = forecast.more.info;
+            String max = forecast.temperature.max;
+            String min = forecast.temperature.min;
+            //Log.i(TAG, "showWeatherInfo date = " + date + ";info = " + info +";max = " + max + ";min = " + min);
             dateText.setText(forecast.date);
             infoText.setText(forecast.more.info);
             maxText.setText(forecast.temperature.max);
             minText.setText(forecast.temperature.min);
             lv_forecastLayout.addView(view);
         }
+        Log.i(TAG, "showWeatherInfo weather.aqi = " + weather.aqi);
         if (weather.aqi != null){
+            Log.i(TAG, "showWeatherInfo tv_aqiText = " + tv_aqiText + ";tv_pm25Text = " + tv_pm25Text);
+            Log.i(TAG, "showWeatherInfo aqi = " + weather.aqi.aqiCity.aqi + ";pm25 = " + weather.aqi.aqiCity.pm25);
             tv_aqiText.setText(weather.aqi.aqiCity.aqi);
             tv_pm25Text.setText(weather.aqi.aqiCity.pm25);
         }
