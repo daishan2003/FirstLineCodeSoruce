@@ -250,10 +250,14 @@ public class WeatherActivity extends AppCompatActivity{
         }
         Log.i(TAG, "showWeatherInfo weather.aqi = " + weather.aqi);
         if (weather.aqi != null){
-            Log.i(TAG, "showWeatherInfo tv_aqiText = " + tv_aqiText + ";tv_pm25Text = " + tv_pm25Text);
-            Log.i(TAG, "showWeatherInfo aqi = " + weather.aqi.aqiCity.aqi + ";pm25 = " + weather.aqi.aqiCity.pm25);
-            tv_aqiText.setText(weather.aqi.aqiCity.aqi);
-            tv_pm25Text.setText(weather.aqi.aqiCity.pm25);
+            //Log.i(TAG, "showWeatherInfo 11111");
+            if (weather.aqi.aqiCity != null) {
+                //Log.i(TAG, "showWeatherInfo aqi = " + weather.aqi.aqiCity);
+                tv_aqiText.setText(weather.aqi.aqiCity.aqi);
+                tv_pm25Text.setText(weather.aqi.aqiCity.pm25);
+                Log.i(TAG, "showWeatherInfo aqi = " + weather.aqi.aqiCity.aqi + ";pm25 = " + weather.aqi.aqiCity.pm25);
+            }
+            //Log.i(TAG, "showWeatherInfo 22222");
         }
         String comfort = "舒适度:" + weather.suggestion.comfort.info;
         String carWash = "洗车指数:" + weather.suggestion.carWash.info;
