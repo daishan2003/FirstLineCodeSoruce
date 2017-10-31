@@ -1,1 +1,1 @@
-include ':CoolWeather'
+include ':CoolWeather', ':LBS'
