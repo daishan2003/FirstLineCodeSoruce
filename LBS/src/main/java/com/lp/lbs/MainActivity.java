@@ -7,13 +7,19 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.model.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,11 +70,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestLocation() {
+        initLocation();
+        mLocationClient.start();
+    }
 
+    private void initLocation() {
+        LocationClientOption option = new LocationClientOption();
+        option.setScanSpan(5000);
+        option.setIsNeedAddress(true);
+        mLocationClient.setLocOption(option);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+        mLocationClient.stop();
+        baiduMap.setMyLocationEnabled(false);
     }
 
     private void navigateTo(BDLocation bdLocation) {
-
+        if (isFirstLocate) {
+            Toast.makeText(this, "nav to" + bdLocation.getAddrStr(), Toast.LENGTH_SHORT).show();
+            LatLng latLng = new LatLng(bdLocation.getLatitude(), bdLocation.getLongitude());
+            MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(latLng);
+            baiduMap.animateMapStatus(update);
+            update = MapStatusUpdateFactory.zoomTo(16f);
+            baiduMap.animateMapStatus(update);
+            isFirstLocate = false;
+        }
+        MyLocationData.Builder builder = new MyLocationData.Builder();
+        builder.latitude(bdLocation.getLatitude());
+        builder.longitude(bdLocation.getLongitude());
+        MyLocationData locationData = builder.build();
+        baiduMap.setMyLocationData(locationData);
     }
 
     private class MyLocationListener implements BDLocationListener {
